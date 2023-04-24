@@ -1,0 +1,44 @@
+
+
+units lj
+dimension 3
+newton on
+boundary s s s
+atom_style full
+
+# Information about the forcefield and topology
+read_data sys.data extra/bond/per/atom 10 extra/special/per/atom 10
+bond_style fene
+bond_coeff 1 30 1.5 1.0 1.0
+special_bonds fene
+
+angle_style cosine/delta
+angle_coeff 1 5 180.0
+#non-bonded interactions
+pair_style lj/cut 3.0
+pair_coeff * * 1.0 1.0 1.122
+pair_modify shift yes
+#Simulation and write settings
+timestep 0.001
+comm_modify cutoff 4
+run_style verlet
+variable        my_step   equal   step
+variable        my_temp   equal   temp
+variable        my_rho    equal   density
+variable        my_pe     equal   pe
+variable        my_ke     equal   ke
+variable        my_etot   equal   etotal
+variable        my_ent    equal   enthalpy
+variable        my_P      equal   press
+variable        my_vol    equal   vol
+
+fix  averages all ave/time 10 5 50000 v_my_temp v_my_etot v_my_pe v_my_ke v_my_ent v_my_P file thermo.avg
+minimize 1.0e-4 1.0e-6 5000 50000
+velocity all create 1 9803 mom yes rot yes
+fix dynamics all nve
+fix lang all langevin 1 1 100 9803
+run 200000000
+dump crds all custom 10000000 coords.lammpstrj id type xu yu zu vx vy vz
+dump_modify crds sort id
+run 250000000
+write_data sys.data.endequil nocoeff
